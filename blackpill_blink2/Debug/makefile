@@ -34,34 +34,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := blackpill_blnk2
+BUILD_ARTIFACT_NAME := blackpill_blink2
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-blackpill_blnk2.elf \
+blackpill_blink2.elf \
 
 MAP_FILES += \
-blackpill_blnk2.map \
+blackpill_blink2.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-blackpill_blnk2.list \
+blackpill_blink2.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: blackpill_blnk2.elf secondary-outputs
+main-build: blackpill_blink2.elf secondary-outputs
 
 # Tool invocations
-blackpill_blnk2.elf blackpill_blnk2.map: $(OBJS) $(USER_OBJS) /home/lth/src/stm32fun/blackpill_blnk2/STM32F411CEUX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "blackpill_blnk2.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/lth/src/stm32fun/blackpill_blnk2/STM32F411CEUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="blackpill_blnk2.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+blackpill_blink2.elf blackpill_blink2.map: $(OBJS) $(USER_OBJS) /home/lth/src/stm32fun/blackpill_blink2/STM32F411CEUX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "blackpill_blink2.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/lth/src/stm32fun/blackpill_blink2/STM32F411CEUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="blackpill_blink2.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -70,14 +70,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-blackpill_blnk2.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "blackpill_blnk2.list"
+blackpill_blink2.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "blackpill_blink2.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) blackpill_blnk2.elf blackpill_blnk2.list blackpill_blnk2.map default.size.stdout
+	-$(RM) blackpill_blink2.elf blackpill_blink2.list blackpill_blink2.map default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
