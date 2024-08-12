@@ -111,7 +111,7 @@ int main(void) {
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
 
-    uint32_t now = 0, last_blink = 0, last_tick = 0;
+    uint32_t now = 0, last_blink = 0, last_tick = 0, loop_cnt = 0;
 
     while (1) {
 
@@ -128,11 +128,14 @@ int main(void) {
 
         if (now - last_tick >= 1000) {
 
-            printf("Tick %lu\n", now);
+            printf("Tick %lu (loop count = %lu)\n", now / 1000, loop_cnt);
 
+            loop_cnt = 0;
             last_tick = now;
 
         }
+
+        ++loop_cnt;
 
         /* USER CODE END WHILE */
 
