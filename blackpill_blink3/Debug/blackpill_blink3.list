@@ -31,23 +31,23 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  13 .debug_abbrev 0000179c  00000000  00000000  0000d50e  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_loclists 00003aec  00000000  00000000  0000ecaa  2**0
+ 14 .debug_loclists 00003adb  00000000  00000000  0000ecaa  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_aranges 000006c0  00000000  00000000  00012798  2**3
+ 15 .debug_aranges 000006c0  00000000  00000000  00012788  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_rnglists 0000050e  00000000  00000000  00012e58  2**0
+ 16 .debug_rnglists 0000050e  00000000  00000000  00012e48  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_macro  00016269  00000000  00000000  00013366  2**0
+ 17 .debug_macro  00016269  00000000  00000000  00013356  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_line   0000a6dd  00000000  00000000  000295cf  2**0
+ 18 .debug_line   0000a6d8  00000000  00000000  000295bf  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_str    0008750d  00000000  00000000  00033cac  2**0
+ 19 .debug_str    0008750d  00000000  00000000  00033c97  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .comment      00000043  00000000  00000000  000bb1b9  2**0
+ 20 .comment      00000043  00000000  00000000  000bb1a4  2**0
                   CONTENTS, READONLY
- 21 .debug_frame  00001844  00000000  00000000  000bb1fc  2**2
+ 21 .debug_frame  00001844  00000000  00000000  000bb1e8  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 22 .debug_line_str 00000056  00000000  00000000  000bca40  2**0
+ 22 .debug_line_str 00000056  00000000  00000000  000bca2c  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -713,81 +713,79 @@ void Error_Handler(void)
     printf("Starting blackpill_blink3\n");
  8000746:	481f      	ldr	r0, [pc, #124]	@ (80007c4 <main+0x90>)
  8000748:	f001 f8d8 	bl	80018fc <puts>
-    uint32_t now = 0, last_blink = 0, last_tick = 0, loop_cnt = 0;
+    uint32_t now = 0, next_blink = 500, next_tick = 1000, loop_cnt = 0;
  800074c:	2500      	movs	r5, #0
- 800074e:	462f      	mov	r7, r5
- 8000750:	462e      	mov	r6, r5
- 8000752:	e015      	b.n	8000780 <main+0x4c>
+ 800074e:	f44f 777a 	mov.w	r7, #1000	@ 0x3e8
+ 8000752:	f44f 76fa 	mov.w	r6, #500	@ 0x1f4
+ 8000756:	e01b      	b.n	8000790 <main+0x5c>
             HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
- 8000754:	f44f 5100 	mov.w	r1, #8192	@ 0x2000
- 8000758:	481b      	ldr	r0, [pc, #108]	@ (80007c8 <main+0x94>)
- 800075a:	f000 fad7 	bl	8000d0c <HAL_GPIO_TogglePin>
-            last_blink = now;
- 800075e:	4626      	mov	r6, r4
- 8000760:	e019      	b.n	8000796 <main+0x62>
+ 8000758:	f44f 5100 	mov.w	r1, #8192	@ 0x2000
+ 800075c:	481a      	ldr	r0, [pc, #104]	@ (80007c8 <main+0x94>)
+ 800075e:	f000 fad5 	bl	8000d0c <HAL_GPIO_TogglePin>
+            next_blink = now + blink_delays[blink_delay];
+ 8000762:	4b1a      	ldr	r3, [pc, #104]	@ (80007cc <main+0x98>)
+ 8000764:	781a      	ldrb	r2, [r3, #0]
+ 8000766:	4b1a      	ldr	r3, [pc, #104]	@ (80007d0 <main+0x9c>)
+ 8000768:	f833 6012 	ldrh.w	r6, [r3, r2, lsl #1]
+ 800076c:	4426      	add	r6, r4
+ 800076e:	e014      	b.n	800079a <main+0x66>
             printf("Tick %lu (loop count = %lu)\n", now / 1000, loop_cnt);
- 8000762:	491a      	ldr	r1, [pc, #104]	@ (80007cc <main+0x98>)
- 8000764:	fba1 3104 	umull	r3, r1, r1, r4
- 8000768:	462a      	mov	r2, r5
- 800076a:	0989      	lsrs	r1, r1, #6
- 800076c:	4818      	ldr	r0, [pc, #96]	@ (80007d0 <main+0x9c>)
- 800076e:	f001 f85d 	bl	800182c <iprintf>
-            last_tick = now;
- 8000772:	4627      	mov	r7, r4
+ 8000770:	4918      	ldr	r1, [pc, #96]	@ (80007d4 <main+0xa0>)
+ 8000772:	fba1 3104 	umull	r3, r1, r1, r4
+ 8000776:	462a      	mov	r2, r5
+ 8000778:	0989      	lsrs	r1, r1, #6
+ 800077a:	4817      	ldr	r0, [pc, #92]	@ (80007d8 <main+0xa4>)
+ 800077c:	f001 f856 	bl	800182c <iprintf>
+            next_tick = now + 1000;
+ 8000780:	f504 777a 	add.w	r7, r4, #1000	@ 0x3e8
             loop_cnt = 0;
- 8000774:	2500      	movs	r5, #0
- 8000776:	e012      	b.n	800079e <main+0x6a>
+ 8000784:	2500      	movs	r5, #0
+ 8000786:	e00a      	b.n	800079e <main+0x6a>
             btn_press = 0;
- 8000778:	4b16      	ldr	r3, [pc, #88]	@ (80007d4 <main+0xa0>)
- 800077a:	2200      	movs	r2, #0
- 800077c:	701a      	strb	r2, [r3, #0]
+ 8000788:	4b14      	ldr	r3, [pc, #80]	@ (80007dc <main+0xa8>)
+ 800078a:	2200      	movs	r2, #0
+ 800078c:	701a      	strb	r2, [r3, #0]
         ++loop_cnt;
- 800077e:	3501      	adds	r5, #1
+ 800078e:	3501      	adds	r5, #1
         now = HAL_GetTick();
- 8000780:	f000 f958 	bl	8000a34 <HAL_GetTick>
- 8000784:	4604      	mov	r4, r0
-        if (now - last_blink >= blink_delays[blink_delay]) {
- 8000786:	1b82      	subs	r2, r0, r6
- 8000788:	4b13      	ldr	r3, [pc, #76]	@ (80007d8 <main+0xa4>)
- 800078a:	7819      	ldrb	r1, [r3, #0]
- 800078c:	4b13      	ldr	r3, [pc, #76]	@ (80007dc <main+0xa8>)
- 800078e:	f833 3011 	ldrh.w	r3, [r3, r1, lsl #1]
- 8000792:	429a      	cmp	r2, r3
- 8000794:	d2de      	bcs.n	8000754 <main+0x20>
-        if (now - last_tick >= 1000) {
- 8000796:	1be3      	subs	r3, r4, r7
- 8000798:	f5b3 7f7a 	cmp.w	r3, #1000	@ 0x3e8
- 800079c:	d2e1      	bcs.n	8000762 <main+0x2e>
+ 8000790:	f000 f950 	bl	8000a34 <HAL_GetTick>
+ 8000794:	4604      	mov	r4, r0
+        if (now >= next_blink) {
+ 8000796:	4286      	cmp	r6, r0
+ 8000798:	d9de      	bls.n	8000758 <main+0x24>
+        if (now >= next_tick) {
+ 800079a:	42a7      	cmp	r7, r4
+ 800079c:	d9e8      	bls.n	8000770 <main+0x3c>
         if (btn_press) {
- 800079e:	4b0d      	ldr	r3, [pc, #52]	@ (80007d4 <main+0xa0>)
+ 800079e:	4b0f      	ldr	r3, [pc, #60]	@ (80007dc <main+0xa8>)
  80007a0:	781b      	ldrb	r3, [r3, #0]
  80007a2:	2b00      	cmp	r3, #0
- 80007a4:	d0eb      	beq.n	800077e <main+0x4a>
+ 80007a4:	d0f3      	beq.n	800078e <main+0x5a>
             printf("Button pressed\n");
  80007a6:	480e      	ldr	r0, [pc, #56]	@ (80007e0 <main+0xac>)
  80007a8:	f001 f8a8 	bl	80018fc <puts>
             ++blink_delay;
- 80007ac:	4a0a      	ldr	r2, [pc, #40]	@ (80007d8 <main+0xa4>)
+ 80007ac:	4a07      	ldr	r2, [pc, #28]	@ (80007cc <main+0x98>)
  80007ae:	7813      	ldrb	r3, [r2, #0]
  80007b0:	3301      	adds	r3, #1
  80007b2:	b2db      	uxtb	r3, r3
  80007b4:	7013      	strb	r3, [r2, #0]
             if (blink_delay >= sizeof(blink_delays) / sizeof(blink_delays[0]))
  80007b6:	2b02      	cmp	r3, #2
- 80007b8:	d9de      	bls.n	8000778 <main+0x44>
+ 80007b8:	d9e6      	bls.n	8000788 <main+0x54>
                 blink_delay = 0;
  80007ba:	4613      	mov	r3, r2
  80007bc:	2200      	movs	r2, #0
  80007be:	701a      	strb	r2, [r3, #0]
- 80007c0:	e7da      	b.n	8000778 <main+0x44>
+ 80007c0:	e7e2      	b.n	8000788 <main+0x54>
  80007c2:	bf00      	nop
  80007c4:	080025dc 	.word	0x080025dc
  80007c8:	40020800 	.word	0x40020800
- 80007cc:	10624dd3 	.word	0x10624dd3
- 80007d0:	080025f8 	.word	0x080025f8
- 80007d4:	2000008d 	.word	0x2000008d
- 80007d8:	2000008c 	.word	0x2000008c
- 80007dc:	20000000 	.word	0x20000000
+ 80007cc:	2000008c 	.word	0x2000008c
+ 80007d0:	20000000 	.word	0x20000000
+ 80007d4:	10624dd3 	.word	0x10624dd3
+ 80007d8:	080025f8 	.word	0x080025f8
+ 80007dc:	2000008d 	.word	0x2000008d
  80007e0:	08002618 	.word	0x08002618
 
 080007e4 <HAL_MspInit>:
