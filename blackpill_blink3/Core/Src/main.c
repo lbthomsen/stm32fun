@@ -45,11 +45,7 @@ UART_HandleTypeDef huart1;
 /* USER CODE BEGIN PV */
 uint8_t btn_press = 0;
 
-uint16_t blink_delays[] = {
-        500,
-        250,
-        100
-};
+uint16_t blink_delays[] = { 500, 250, 100 };
 
 uint8_t blink_delay = 0;
 
@@ -135,7 +131,7 @@ int main(void)
 
         if (now - last_blink >= blink_delays[blink_delay]) {
 
-            printf("Toggling GPIO\n");
+            //printf("Toggling GPIO\n");
 
             HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 
@@ -156,7 +152,8 @@ int main(void)
             printf("Button pressed\n");
 
             ++blink_delay;
-            if (blink_delay >= sizeof(blink_delays) / sizeof(blink_delays[0])) blink_delay = 0;
+            if (blink_delay >= sizeof(blink_delays) / sizeof(blink_delays[0]))
+                blink_delay = 0;
 
             btn_press = 0;
 
