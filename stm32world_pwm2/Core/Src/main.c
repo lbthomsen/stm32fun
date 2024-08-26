@@ -51,8 +51,8 @@ UART_HandleTypeDef huart1;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_USART1_UART_Init(void);
 static void MX_TIM4_Init(void);
+static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -105,14 +105,17 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART1_UART_Init();
   MX_TIM4_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-    printf("\n\n\n\n-------------\nStarting pwm1\n");
+    printf("\n\n\n\n-------------\nStarting pwm2\n");
 
-    printf("Starting timer channel");
+    printf("Starting timer channels\n");
     HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
+    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
+    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 
     //__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, 900);
 
@@ -141,11 +144,16 @@ int main(void)
         if (now >= next_change) {
 
             __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, pwm_value);
+            __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, 1000 - pwm_value);
+            __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, pwm_value);
+            __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 1000 - pwm_value);
 
             pwm_value += pwm_change;
 
-            if (pwm_value == 0) pwm_change = 1;
-            if (pwm_value == 1000) pwm_change = -1;
+            if (pwm_value == 0)
+                pwm_change = 1;
+            if (pwm_value == 1000)
+                pwm_change = -1;
 
             next_change = now + 2;
         }
@@ -253,6 +261,18 @@ static void MX_TIM4_Init(void)
   sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
   {
     Error_Handler();
   }

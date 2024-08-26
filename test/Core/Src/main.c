@@ -6,7 +6,7 @@
  ******************************************************************************
  * @attention
  *
- * Copyright (c) 2024 STM32World <lth@stm32world.com>
+ * Copyright (c) 2024 STMicroelectronics.
  * All rights reserved.
  *
  * This software is licensed under terms that can be found in the LICENSE file
@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <math.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,6 +32,11 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define SAMPLE_DELAY 10
+#define SAMPLE_FREQ (1000 / SAMPLE_DELAY)
+#define SAMPLE_RANGE 1000
+#define SAMPLE_MID (SAMPLE_RANGE / 2)
 
 /* USER CODE END PD */
 
@@ -51,8 +57,8 @@ UART_HandleTypeDef huart1;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_USART1_UART_Init(void);
 static void MX_TIM4_Init(void);
+static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -72,6 +78,12 @@ int _write(int fd, char *ptr, int len) {
             return -1;
     }
     return -1;
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+    if (htim->Instance == TIM4) {
+        HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    }
 }
 
 /* USER CODE END 0 */
@@ -105,49 +117,70 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART1_UART_Init();
   MX_TIM4_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-    printf("\n\n\n\n-------------\nStarting pwm1\n");
+    printf("\n\n\n\n--------\nStarting\n");
+    printf("Sample freq = %d\n", SAMPLE_FREQ);
 
-    printf("Starting timer channel");
     HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
-
-    //__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, 900);
+    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
+    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
+    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-    uint16_t pwm_value = 0;
-    int8_t pwm_change = 1;
 
-    uint32_t now = 0, loop_cnt = 0, next_tick = 1000, next_change = 0;
+    uint32_t led_channels[] = {
+        TIM_CHANNEL_1,
+        TIM_CHANNEL_2,
+        TIM_CHANNEL_3,
+        TIM_CHANNEL_4
+    };
+
+    float angles[] = {
+        0,          // 0 degrees
+        M_PI_2,     // 90 degrees
+        M_PI,       // 180 degrees
+        3 * M_PI_2  // 270 degrees
+    };
+
+    float angle_changes[] = {
+        4 * (2 * M_PI / SAMPLE_FREQ),
+        4 * (2 * M_PI / SAMPLE_FREQ),
+        4 * (2 * M_PI / SAMPLE_FREQ),
+        4 * (2 * M_PI / SAMPLE_FREQ)
+    };
+
+
+    uint32_t now = 0, loop_cnt = 0, next_tick = 1000, next_sample = SAMPLE_DELAY;
 
     while (1) {
 
-        now = uwTick;
+        now = HAL_GetTick();
+
+        if (now >= next_sample) {
+            for (int i = 0; i < sizeof(angles) / sizeof(angles[0]); ++i) {
+                angles[i] += angle_changes[i];
+                if (angles[i] >= 2 * M_PI)
+                    angles[i] -= (2 * M_PI);
+
+                __HAL_TIM_SET_COMPARE(&htim4, led_channels[i], SAMPLE_MID + (SAMPLE_MID * sin(angles[i]) ));
+
+            }
+            next_sample = now + SAMPLE_DELAY;
+        }
 
         if (now >= next_tick) {
 
-            printf("Tick %lu (loop = %lu)\n", now / 1000, loop_cnt);
+            printf("Tick %lu - loops = %lu\n", now / 1000, loop_cnt);
 
             loop_cnt = 0;
             next_tick = now + 1000;
-        }
-
-        if (now >= next_change) {
-
-            __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, pwm_value);
-
-            pwm_value += pwm_change;
-
-            if (pwm_value == 0) pwm_change = 1;
-            if (pwm_value == 1000) pwm_change = -1;
-
-            next_change = now + 2;
         }
 
         ++loop_cnt;
@@ -226,7 +259,7 @@ static void MX_TIM4_Init(void)
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = 839;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 999;
+  htim4.Init.Period = SAMPLE_RANGE - 1;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
@@ -242,7 +275,7 @@ static void MX_TIM4_Init(void)
   {
     Error_Handler();
   }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_ENABLE;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
   {
@@ -253,6 +286,18 @@ static void MX_TIM4_Init(void)
   sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
   {
     Error_Handler();
   }
@@ -303,13 +348,25 @@ static void MX_USART1_UART_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 /* USER CODE BEGIN MX_GPIO_Init_1 */
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin : LED_Pin */
+  GPIO_InitStruct.Pin = LED_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -328,8 +385,7 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state */
     __disable_irq();
-    while (1)
-    {
+    while (1) {
     }
   /* USER CODE END Error_Handler_Debug */
 }
