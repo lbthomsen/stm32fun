@@ -2,6 +2,7 @@
 ../Core/Src/main.c:347:13:MX_DMA_Init	1
 ../Core/Src/main.c:75:5:_write	3
 ../Core/Src/main.c:89:17:HAL_GetTick	1
+../Core/Src/main.c:93:6:HAL_TIM_PeriodElapsedCallback	2
 ../Core/Src/main.c:107:6:HAL_DAC_ConvCpltCallbackCh1	2
 ../Core/Src/main.c:112:6:HAL_DAC_ConvHalfCpltCallbackCh1	2
 ../Core/Src/main.c:399:6:Error_Handler	1

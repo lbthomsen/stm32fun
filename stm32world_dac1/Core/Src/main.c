@@ -155,7 +155,7 @@ int main(void)
 
 	HAL_TIM_Base_Start_IT(&htim6);
 
-	HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t *)&dma_buffer, 2 * DMA_BUFFER_SIZE, DAC_ALIGN_12B_L);
+	HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t *)&dma_buffer, 2 * DMA_BUFFER_SIZE, DAC_ALIGN_12B_R);
 
   /* USER CODE END 2 */
 
