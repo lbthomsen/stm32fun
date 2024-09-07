@@ -6,7 +6,7 @@
  ******************************************************************************
  * @attention
  *
- * Copyright (c) 2024 STMicroelectronics.
+ * Copyright (c) 2024 STM32World <lth@stm32world.com>
  * All rights reserved.
  *
  * This software is licensed under terms that can be found in the LICENSE file
@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <math.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,7 +32,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define SAMPLE_DELAY 10
+#define SAMPLE_FREQ (1000 / SAMPLE_DELAY)
+#define SAMPLE_MID (SAMPLE_RANGE / 2)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -45,6 +48,29 @@ TIM_HandleTypeDef htim4;
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
+
+uint32_t cb_cnt = 0;
+
+uint32_t led_channels[] = {
+        TIM_CHANNEL_1,
+        TIM_CHANNEL_2,
+        TIM_CHANNEL_3,
+        TIM_CHANNEL_4
+};
+
+float angles[] = {
+        0,
+        0,
+        0,
+        0
+};
+
+float angle_changes[] = {
+        1 * (2 * M_PI / SAMPLE_FREQ),
+        2 * (2 * M_PI / SAMPLE_FREQ),
+        0.5 * (2 * M_PI / SAMPLE_FREQ),
+        0.25 * (2 * M_PI / SAMPLE_FREQ)
+};
 
 /* USER CODE END PV */
 
@@ -74,13 +100,30 @@ int _write(int fd, char *ptr, int len) {
     return -1;
 }
 
+inline void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
+    if (htim->Instance == TIM4) {
+
+        for ( int i = 0; i < sizeof(angles) / sizeof(angles[0]); ++i) {
+
+            angles[i] += angle_changes[i];
+
+            if (angles[i] >= 2 * M_PI) angles[i] -= (2 * M_PI);
+
+            __HAL_TIM_SET_COMPARE(&htim4, led_channels[i], SAMPLE_MID - (SAMPLE_MID * sin(angles[i]) ));
+        }
+
+        ++cb_cnt;
+    }
+}
+
 /* USER CODE END 0 */
 
 /**
   * @brief  The application entry point.
   * @retval int
   */
-int main(void) {
+int main(void)
+{
 
   /* USER CODE BEGIN 1 */
 
@@ -108,10 +151,10 @@ int main(void) {
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 
-    printf("\n\n\n\n-------------\nStarting pwm3\n");
+    printf("\n\n\n\n-------------\nStarting pwm2\n");
 
     printf("Starting timer channels\n");
-    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start_IT(&htim4, TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
     HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
     HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
@@ -124,7 +167,7 @@ int main(void) {
     uint16_t pwm_value = 0;
     int8_t pwm_change = 1;
 
-    uint32_t now = 0, loop_cnt = 0, next_tick = 1000, next_change = 0;
+    uint32_t now = 0, loop_cnt = 0, next_tick = 1000, next_change = 0, next_sample = SAMPLE_DELAY;
 
     while (1) {
 
@@ -132,27 +175,10 @@ int main(void) {
 
         if (now >= next_tick) {
 
-            printf("Tick %lu (loop = %lu)\n", now / 1000, loop_cnt);
+            printf("Tick %lu (loop = %lu cb = %lu)\n", now / 1000, loop_cnt, cb_cnt);
 
             loop_cnt = 0;
             next_tick = now + 1000;
-        }
-
-        if (now >= next_change) {
-
-            __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, pwm_value);
-            __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, 1000 - pwm_value);
-            __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, pwm_value);
-            __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 1000 - pwm_value);
-
-            pwm_value += pwm_change;
-
-            if (pwm_value == 0)
-                pwm_change = 1;
-            if (pwm_value == 1000)
-                pwm_change = -1;
-
-            next_change = now + 2;
         }
 
         ++loop_cnt;
@@ -231,7 +257,7 @@ static void MX_TIM4_Init(void)
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = 839;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 999;
+  htim4.Init.Period = SAMPLE_RANGE - 1;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
