@@ -1,27 +1,27 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2024 Lars Boegild Thomsen <lth@stm32world.com>
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,7 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define DMA_BUFFER_SIZE 100
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -41,18 +41,26 @@
 
 /* Private variables ---------------------------------------------------------*/
 DAC_HandleTypeDef hdac;
+DMA_HandleTypeDef hdma_dac1;
 
 TIM_HandleTypeDef htim6;
 
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
+uint32_t cb_cnt = 0;
+uint32_t cb_full = 0;
+uint32_t cb_half = 0;
+uint32_t loop_cnt = 0;
+
+uint16_t dma_buffer[2 * DMA_BUFFER_SIZE];
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_DAC_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_TIM6_Init(void);
@@ -62,6 +70,49 @@ static void MX_TIM6_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+// Send printf to uart1
+int _write(int fd, char *ptr, int len) {
+	HAL_StatusTypeDef hstatus;
+
+	if (fd == 1 || fd == 2) {
+		hstatus = HAL_UART_Transmit(&huart1, (uint8_t*) ptr, len,
+		HAL_MAX_DELAY);
+		if (hstatus == HAL_OK)
+			return len;
+		else
+			return -1;
+	}
+	return -1;
+}
+
+inline uint32_t HAL_GetTick(void) {
+	return uwTick;
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+
+	if (htim->Instance == htim6.Instance) {
+		++cb_cnt;
+	}
+
+}
+
+inline void do_dac(uint16_t *buffer) {
+	for (int i = 0; i < DMA_BUFFER_SIZE; ++i) {
+		buffer[i] = 40 * i;
+	}
+}
+
+void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdac) {
+	++cb_full;
+	do_dac(&dma_buffer[DMA_BUFFER_SIZE]);
+}
+
+void HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef *hdac) {
+	++cb_half;
+	do_dac(&dma_buffer[0]);
+}
 
 /* USER CODE END 0 */
 
@@ -94,21 +145,43 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_DAC_Init();
   MX_USART1_UART_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 
+	printf("\n\n\n\n--------\nStarting\n");
+
+	HAL_TIM_Base_Start_IT(&htim6);
+
+	HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t *)&dma_buffer, 2 * DMA_BUFFER_SIZE, DAC_ALIGN_12B_L);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+
+	uint32_t now = 0, next_tick = 1000;
+
+	while (1) {
+
+		now = HAL_GetTick();
+
+		if (now >= next_tick) {
+
+			printf("Tick %lu (loop = %lu cb = %lu full = %lu half = %lu)\n", now / 1000, loop_cnt, cb_cnt, cb_full, cb_half);
+
+			loop_cnt = 0;
+			next_tick = now + 1000;
+		}
+
+		++loop_cnt;
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+	}
   /* USER CODE END 3 */
 }
 
@@ -185,7 +258,7 @@ static void MX_DAC_Init(void)
 
   /** DAC channel OUT1 config
   */
-  sConfig.DAC_Trigger = DAC_TRIGGER_NONE;
+  sConfig.DAC_Trigger = DAC_TRIGGER_T6_TRGO;
   sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
   if (HAL_DAC_ConfigChannel(&hdac, &sConfig, DAC_CHANNEL_1) != HAL_OK)
   {
@@ -215,9 +288,9 @@ static void MX_TIM6_Init(void)
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 0;
+  htim6.Init.Prescaler = 83;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 65535;
+  htim6.Init.Period = 99;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
@@ -269,19 +342,47 @@ static void MX_USART1_UART_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Stream5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 /* USER CODE BEGIN MX_GPIO_Init_1 */
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : LED_Pin */
+  GPIO_InitStruct.Pin = LED_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -298,11 +399,10 @@ static void MX_GPIO_Init(void)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+	/* User can add his own implementation to report the HAL error return state */
+	__disable_irq();
+	while (1) {
+	}
   /* USER CODE END Error_Handler_Debug */
 }
 
