@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <math.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,7 +32,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define DMA_BUFFER_SIZE 100
+#define DMA_BUFFER_SIZE 1000
+#define SAMPLE_FREQ 20000
+#define OUTPUT_RANGE 4096
+#define OUTPUT_MID 2048
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -48,12 +52,18 @@ TIM_HandleTypeDef htim6;
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
+
+const float two_pi = 2 * M_PI;
+
 uint32_t cb_cnt = 0;
 uint32_t cb_full = 0;
 uint32_t cb_half = 0;
 uint32_t loop_cnt = 0;
 
 uint16_t dma_buffer[2 * DMA_BUFFER_SIZE];
+
+float angle = 0;
+float angle_change = 100 * (2 * M_PI / SAMPLE_FREQ);
 
 /* USER CODE END PV */
 
@@ -90,26 +100,31 @@ inline uint32_t HAL_GetTick(void) {
 	return uwTick;
 }
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+//inline void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+//
+//	if (htim->Instance == htim6.Instance) {
+//		++cb_cnt;
+//	}
+//
+//}
 
-	if (htim->Instance == htim6.Instance) {
-		++cb_cnt;
-	}
-
-}
-
-inline void do_dac(uint16_t *buffer) {
+static inline void do_dac(uint16_t *buffer) {
 	for (int i = 0; i < DMA_BUFFER_SIZE; ++i) {
-		buffer[i] = 40 * i;
+	    buffer[i] = OUTPUT_MID - (OUTPUT_MID * sin(angle));
+	    angle += angle_change;
+	    if (angle >= two_pi) {
+	        angle -= two_pi;
+	    }
+		//buffer[i] = 40 * i;
 	}
 }
 
-void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdac) {
+inline void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdac) {
 	++cb_full;
 	do_dac(&dma_buffer[DMA_BUFFER_SIZE]);
 }
 
-void HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef *hdac) {
+inline void HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef *hdac) {
 	++cb_half;
 	do_dac(&dma_buffer[0]);
 }
@@ -290,7 +305,7 @@ static void MX_TIM6_Init(void)
   htim6.Instance = TIM6;
   htim6.Init.Prescaler = 83;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 99;
+  htim6.Init.Period = 49;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
