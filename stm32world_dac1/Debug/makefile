@@ -52,6 +52,12 @@ default.size.stdout \
 OBJDUMP_LIST += \
 stm32world_dac1.list \
 
+OBJCOPY_HEX += \
+stm32world_dac1.hex \
+
+OBJCOPY_BIN += \
+stm32world_dac1.bin \
+
 
 # All Target
 all: main-build
@@ -61,7 +67,7 @@ main-build: stm32world_dac1.elf secondary-outputs
 
 # Tool invocations
 stm32world_dac1.elf stm32world_dac1.map: $(OBJS) $(USER_OBJS) /home/lth/src/stm32fun/stm32world_dac1/STM32F405RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "stm32world_dac1.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/lth/src/stm32fun/stm32world_dac1/STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="stm32world_dac1.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "stm32world_dac1.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/lth/src/stm32fun/stm32world_dac1/STM32F405RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="stm32world_dac1.map" -Wl,--gc-sections -static -L../Middlewares/Third_Party/ARM_CMSIS/CMSIS/DSP/Lib/GCC --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -75,12 +81,22 @@ stm32world_dac1.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
+stm32world_dac1.hex: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objcopy  -O ihex $(EXECUTABLES) "stm32world_dac1.hex"
+	@echo 'Finished building: $@'
+	@echo ' '
+
+stm32world_dac1.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "stm32world_dac1.bin"
+	@echo 'Finished building: $@'
+	@echo ' '
+
 # Other Targets
 clean:
-	-$(RM) default.size.stdout stm32world_dac1.elf stm32world_dac1.list stm32world_dac1.map
+	-$(RM) default.size.stdout stm32world_dac1.bin stm32world_dac1.elf stm32world_dac1.hex stm32world_dac1.list stm32world_dac1.map
 	-@echo ' '
 
-secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
+secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_HEX) $(OBJCOPY_BIN)
 
 fail-specified-linker-script-missing:
 	@echo 'Error: Cannot find the specified linker script. Check the linker settings in the build configuration.'

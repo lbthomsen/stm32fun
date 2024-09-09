@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <math.h>
+#include "arm_math.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,9 +33,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define DMA_BUFFER_SIZE 1000
-#define SAMPLE_FREQ 20000
-#define OUTPUT_RANGE 4096
+#define DMA_BUFFER_SIZE 32
+#define SAMPLE_FREQ 100000
+//#define OUTPUT_RANGE 4096
 #define OUTPUT_MID 2048
 /* USER CODE END PD */
 
@@ -64,6 +65,7 @@ uint16_t dma_buffer[2 * DMA_BUFFER_SIZE];
 
 float angle = 0;
 float angle_change = 100 * (2 * M_PI / SAMPLE_FREQ);
+float amplifier = 0.98;
 
 /* USER CODE END PV */
 
@@ -100,17 +102,17 @@ inline uint32_t HAL_GetTick(void) {
     return uwTick;
 }
 
-//inline void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-//
-//	if (htim->Instance == htim6.Instance) {
-//		++cb_cnt;
-//	}
-//
-//}
+inline void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+
+    if (htim->Instance == htim6.Instance) {
+        ++cb_cnt;
+    }
+
+}
 
 static inline void do_dac(uint16_t *buffer) {
     for (int i = 0; i < DMA_BUFFER_SIZE; ++i) {
-        buffer[i] = OUTPUT_MID - (OUTPUT_MID * sin(angle));
+        buffer[i] = OUTPUT_MID - (amplifier * (OUTPUT_MID * arm_cos_f32(angle)));
         angle += angle_change;
         if (angle >= two_pi) {
             angle -= two_pi;
@@ -303,9 +305,9 @@ static void MX_TIM6_Init(void)
 
     /* USER CODE END TIM6_Init 1 */
     htim6.Instance = TIM6;
-    htim6.Init.Prescaler = 83;
+    htim6.Init.Prescaler = 84 - 1;
     htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim6.Init.Period = 49;
+    htim6.Init.Period = 10 - 1;
     htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
     if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
             {
