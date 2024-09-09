@@ -746,13 +746,13 @@ void Error_Handler(void)
  800078a:	480e      	ldr	r0, [pc, #56]	@ (80007c4 <MX_TIM6_Init+0x44>)
  800078c:	4a0e      	ldr	r2, [pc, #56]	@ (80007c8 <MX_TIM6_Init+0x48>)
  800078e:	6002      	str	r2, [r0, #0]
-  htim6.Init.Prescaler = 42 - 1;
- 8000790:	2229      	movs	r2, #41	@ 0x29
+  htim6.Init.Prescaler = 84 - 1;
+ 8000790:	2253      	movs	r2, #83	@ 0x53
  8000792:	6042      	str	r2, [r0, #4]
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
  8000794:	6083      	str	r3, [r0, #8]
-  htim6.Init.Period = 4- 1;
- 8000796:	2203      	movs	r2, #3
+  htim6.Init.Period = 10 - 1;
+ 8000796:	2209      	movs	r2, #9
  8000798:	60c2      	str	r2, [r0, #12]
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
  800079a:	6183      	str	r3, [r0, #24]

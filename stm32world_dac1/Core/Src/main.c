@@ -34,7 +34,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define DMA_BUFFER_SIZE 64
-#define SAMPLE_FREQ 500000
+#define SAMPLE_FREQ 100000
 #define OUTPUT_MID 2048
 /* USER CODE END PD */
 
@@ -63,7 +63,7 @@ uint32_t cb_half = 0;
 uint16_t dma_buffer[2 * DMA_BUFFER_SIZE];
 
 float angle = 0;
-float angle_change = 1000 * (2 * M_PI / SAMPLE_FREQ);
+float angle_change = 100 * (2 * M_PI / SAMPLE_FREQ);
 float amplifier = 0.9;
 
 /* USER CODE END PV */
@@ -300,9 +300,9 @@ static void MX_TIM6_Init(void)
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 42 - 1;
+  htim6.Init.Prescaler = 84 - 1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 4- 1;
+  htim6.Init.Period = 10 - 1;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
