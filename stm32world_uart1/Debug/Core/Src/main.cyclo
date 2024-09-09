@@ -1,0 +1,13 @@
+../Core/Src/main.c:386:13:MX_GPIO_Init	1
+../Core/Src/main.c:368:13:MX_DMA_Init	1
+../Core/Src/main.c:73:17:HAL_GetTick	1
+../Core/Src/main.c:78:5:_write	3
+../Core/Src/main.c:92:6:process_character	3
+../Core/Src/main.c:109:6:HAL_UARTEx_RxEventCallback	4
+../Core/Src/main.c:420:6:Error_Handler	1
+../Core/Src/main.c:129:6:HAL_UART_ErrorCallback	0
+../Core/Src/main.c:304:13:MX_USART1_UART_Init	1
+../Core/Src/main.c:337:13:MX_USART2_UART_Init	1
+../Core/Src/main.c:271:13:MX_UART4_Init	1
+../Core/Src/main.c:225:6:SystemClock_Config	1
+../Core/Src/main.c:140:5:main	2
