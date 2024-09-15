@@ -164,6 +164,11 @@ int main(void)
 
     printf("\n\n\n\n--------\nStarting\n");
 
+    // Show calculated frequency
+    //sample_freq = 84000000 / (htim6.Instance->PSC + 1) / (htim6.Instance->ARR + 1);
+
+    //printf("Calculated sample frequency = %lu\n", sample_freq);
+
     HAL_TIM_Base_Start_IT(&htim6);
 
     HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t*) &dma_buffer, 2 * DMA_BUFFER_SIZE, DAC_ALIGN_12B_R);
