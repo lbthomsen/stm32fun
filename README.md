@@ -1,4 +1,4 @@
 # stm32fun
-STM32 Beginners Fun
 
-Videos here: https://www.youtube.com/@stm32world/videos
+Moved to https://github.com/STM32World/stm32fun
+
